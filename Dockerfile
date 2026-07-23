@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1.7
 
 # ------- Build stage -------
-FROM oven/bun:1.3 AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+COPY package.json package-lock.json* ./
+RUN npm install
 
 COPY . .
 
@@ -13,7 +13,7 @@ COPY . .
 # because we run on a plain Iranian VPS with Node in Docker.
 ENV NODE_ENV=production
 ENV NITRO_PRESET=node-server
-RUN bun run build
+RUN npm run build
 
 # ------- Runtime stage -------
 FROM node:20-alpine AS runtime
