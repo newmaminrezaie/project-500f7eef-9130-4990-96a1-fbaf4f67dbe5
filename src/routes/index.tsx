@@ -1,24 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import { getCurrentUser } from "@/lib/auth.server";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
-export const Route = createFileRoute("/")({
-  component: Index,
+const checkSession = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const u = await getCurrentUser();
+    return u ? { signedIn: true as const } : { signedIn: false as const };
+  } catch {
+    return { signedIn: false as const };
+  }
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
+export const Route = createFileRoute("/")({
+  beforeLoad: async () => {
+    const res = await checkSession();
+    if (res.signedIn) throw redirect({ to: "/app" });
+    throw redirect({ to: "/login" });
+  },
+});
