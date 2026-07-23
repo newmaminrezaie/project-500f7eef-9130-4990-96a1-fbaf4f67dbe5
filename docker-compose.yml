@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rezaie_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_pg_password}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # No published port — only the app talks to Postgres on the internal network.
+    # For backups from the host, use: docker compose exec postgres pg_dump ...
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-app}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rezaie_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      HOST: "0.0.0.0"
+      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme_pg_password}@postgres:5432/${POSTGRES_DB:-app}
+      SESSION_SECRET: ${SESSION_SECRET}
+      OWNER_USERNAME: ${OWNER_USERNAME:-owner}
+      OWNER_PASSWORD: ${OWNER_PASSWORD}
+      OWNER_NAME: ${OWNER_NAME:-مدیر}
+      DAD_USERNAME: ${DAD_USERNAME:-dad}
+      DAD_PASSWORD: ${DAD_PASSWORD}
+      DAD_NAME: ${DAD_NAME:-پدر}
+    ports:
+      # Host port 4000 -> container 4000. Nginx on the host proxies
+      # rezaiesaffron.ir to http://127.0.0.1:4000
+      - "127.0.0.1:4000:4000"
+
+volumes:
+  pgdata:
