@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { saveCustomer } from "@/lib/customers.functions";
 import { toEn } from "@/lib/format";
 
-export const Route = createFileRoute("/_app/customers/new")({
+export const Route = createFileRoute("/app/customers/new")({
   head: () => ({ meta: [{ title: "مشتری جدید — حسابداری زعفران رضایی" }] }),
   component: NewCustomer,
 });

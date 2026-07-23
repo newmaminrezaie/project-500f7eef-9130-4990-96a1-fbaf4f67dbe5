@@ -5,7 +5,7 @@ import { Search, Plus, Phone, ChevronLeft } from "lucide-react";
 import { listCustomers, type Customer } from "@/lib/customers.functions";
 import { toFa } from "@/lib/format";
 
-export const Route = createFileRoute("/_app/customers/")({
+export const Route = createFileRoute("/app/customers/")({
   head: () => ({ meta: [{ title: "مشتریان — حسابداری زعفران رضایی" }] }),
   component: CustomersPage,
 });

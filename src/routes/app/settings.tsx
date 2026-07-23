@@ -4,7 +4,7 @@ import { useState } from "react";
 import { KeyRound, LogOut, Database } from "lucide-react";
 import { changePassword, logout } from "@/lib/auth.functions";
 
-export const Route = createFileRoute("/_app/settings")({
+export const Route = createFileRoute("/app/settings")({
   head: () => ({ meta: [{ title: "تنظیمات — حسابداری زعفران رضایی" }] }),
   component: SettingsPage,
 });

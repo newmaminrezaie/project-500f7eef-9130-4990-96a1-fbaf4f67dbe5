@@ -5,7 +5,7 @@ import { Users, Plus } from "lucide-react";
 import { customerStats } from "@/lib/customers.functions";
 import { toFa } from "@/lib/format";
 
-export const Route = createFileRoute("/_app/")({
+export const Route = createFileRoute("/app/")({
   head: () => ({ meta: [{ title: "خانه — حسابداری زعفران رضایی" }] }),
   component: Dashboard,
 });

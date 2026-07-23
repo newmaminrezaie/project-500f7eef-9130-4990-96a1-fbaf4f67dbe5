@@ -6,7 +6,7 @@ import { ArrowRight, Phone, Trash2 } from "lucide-react";
 import { getCustomer, saveCustomer, deleteCustomer, type Customer } from "@/lib/customers.functions";
 import { toEn, toFa, formatDate } from "@/lib/format";
 
-export const Route = createFileRoute("/_app/customers/$id")({
+export const Route = createFileRoute("/app/customers/$id")({
   head: () => ({ meta: [{ title: "مشتری — حسابداری زعفران رضایی" }] }),
   component: CustomerDetail,
 });

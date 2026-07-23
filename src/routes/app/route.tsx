@@ -14,7 +14,7 @@ const requireAuth = createServerFn({ method: "GET" }).handler(async () => {
   }
 });
 
-export const Route = createFileRoute("/_app")({
+export const Route = createFileRoute("/app")({
   beforeLoad: async () => {
     const res = await requireAuth();
     if (!res.authed) throw redirect({ to: "/login" });
