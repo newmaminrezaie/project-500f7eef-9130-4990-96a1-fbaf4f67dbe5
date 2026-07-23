@@ -36,9 +36,11 @@ function LoginPage() {
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-5 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 grid h-20 w-20 place-items-center rounded-3xl bg-primary text-4xl shadow-soft">
-            🌾
-          </div>
+          <img
+            src="/saffron-rezaie-logo.png"
+            alt="زعفران رضایی"
+            className="mx-auto mb-4 h-32 w-auto"
+          />
           <h1 className="text-2xl font-bold text-foreground">حسابداری زعفران رضایی</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             برای ورود، نام کاربری و رمز عبور خود را وارد کنید.
