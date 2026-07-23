@@ -1,0 +1,27 @@
+{
+  "name": "حسابداری زعفران رضایی",
+  "short_name": "زعفران رضایی",
+  "description": "سامانه حسابداری فروشگاه زعفران و خشکبار رضایی",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdf7ee",
+  "theme_color": "#c8781f",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/saffron-rezaie-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/saffron-rezaie-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
