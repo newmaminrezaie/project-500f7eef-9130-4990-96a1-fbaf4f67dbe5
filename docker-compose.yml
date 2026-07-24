@@ -1,36 +1,25 @@
-services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: rezaie_pg
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_pg_password}
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    # No published port — only the app talks to Postgres on the internal network.
-    # For backups from the host, use: docker compose exec postgres pg_dump ...
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-app}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+# docker-compose v1 compatible (Python docker-compose on the VPS).
+# Postgres is REUSED from the existing Higooya stack — we only run the app
+# container here. The app talks to Higooya's postgres over the host loopback
+# via network_mode: host, so no shared docker network is needed.
+version: "3.9"
 
+services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
+    image: rezaie-app:latest
     container_name: rezaie_app
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
+    # Host networking: app listens on 127.0.0.1:4000 directly, and can reach
+    # Higooya's postgres on 127.0.0.1:5432 without exposing it publicly.
+    network_mode: host
     environment:
       NODE_ENV: production
       PORT: "4000"
-      HOST: "0.0.0.0"
-      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-changeme_pg_password}@postgres:5432/${POSTGRES_DB:-app}
+      HOST: "127.0.0.1"
+      DATABASE_URL: ${DATABASE_URL}
       SESSION_SECRET: ${SESSION_SECRET}
       OWNER_USERNAME: ${OWNER_USERNAME:-owner}
       OWNER_PASSWORD: ${OWNER_PASSWORD}
@@ -38,10 +27,3 @@ services:
       DAD_USERNAME: ${DAD_USERNAME:-dad}
       DAD_PASSWORD: ${DAD_PASSWORD}
       DAD_NAME: ${DAD_NAME:-پدر}
-    ports:
-      # Host port 4000 -> container 4000. Nginx on the host proxies
-      # rezaiesaffron.ir to http://127.0.0.1:4000
-      - "127.0.0.1:4000:4000"
-
-volumes:
-  pgdata:
