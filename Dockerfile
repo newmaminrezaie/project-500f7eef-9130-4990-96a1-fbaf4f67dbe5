@@ -9,10 +9,8 @@ RUN npm install
 
 COPY . .
 
-# Build a Node server bundle (not the default Cloudflare Workers preset),
-# because we run on a plain Iranian VPS with Node in Docker.
+# Node server bundle preset is configured in vite.config.ts (nitro.preset).
 ENV NODE_ENV=production
-ENV NITRO_PRESET=node-server
 RUN npm run build
 
 # ------- Runtime stage -------
