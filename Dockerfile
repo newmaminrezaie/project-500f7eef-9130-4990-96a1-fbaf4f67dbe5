@@ -9,11 +9,15 @@ RUN npm install
 
 COPY . .
 
-# Build a Node server bundle (not the default Cloudflare Workers preset),
-# because we run on a plain Iranian VPS with Node in Docker.
+# Node server bundle preset is configured in vite.config.ts (nitro.preset).
 ENV NODE_ENV=production
-ENV NITRO_PRESET=node-server
 RUN npm run build
+
+# Inline runtime helpers (__commonJSMin, __toESM, ...) into split vendor
+# chunks. Works around a nitro/rolldown code-splitting bug that leaves those
+# helpers undefined at first use, crashing SSR with
+# "TypeError: __commonJSMin is not a function".
+RUN node scripts/patch-runtime-helpers.mjs
 
 # ------- Runtime stage -------
 FROM node:20-alpine AS runtime
