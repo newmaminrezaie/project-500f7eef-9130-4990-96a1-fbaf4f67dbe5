@@ -13,6 +13,12 @@ COPY . .
 ENV NODE_ENV=production
 RUN npm run build
 
+# Inline runtime helpers (__commonJSMin, __toESM, ...) into split vendor
+# chunks. Works around a nitro/rolldown code-splitting bug that leaves those
+# helpers undefined at first use, crashing SSR with
+# "TypeError: __commonJSMin is not a function".
+RUN node scripts/patch-runtime-helpers.mjs
+
 # ------- Runtime stage -------
 FROM node:20-alpine AS runtime
 WORKDIR /app
