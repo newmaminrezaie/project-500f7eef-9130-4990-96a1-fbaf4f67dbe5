@@ -13,11 +13,16 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppAccountsRouteImport } from './routes/app/accounts'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppCustomersIndexRouteImport } from './routes/app/customers/index'
 import { Route as AppCustomersIdRouteImport } from './routes/app/customers/$id'
 import { Route as AppCustomersNewRouteImport } from './routes/app/customers/new'
 import { Route as AppInventoryIndexRouteImport } from './routes/app/inventory/index'
+import { Route as AppReportsSlugRouteImport } from './routes/app/reports/$slug'
+import { Route as AppDocsKindIndexRouteImport } from './routes/app/docs/$kind/index'
+import { Route as AppDocsKindIdRouteImport } from './routes/app/docs/$kind/$id'
+import { Route as AppDocsKindNewRouteImport } from './routes/app/docs/$kind/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -37,6 +42,11 @@ const LoginRoute = LoginRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppAccountsRoute = AppAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -64,39 +74,74 @@ const AppInventoryIndexRoute = AppInventoryIndexRouteImport.update({
   path: '/inventory/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppReportsSlugRoute = AppReportsSlugRouteImport.update({
+  id: '/reports/$slug',
+  path: '/reports/$slug',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDocsKindIndexRoute = AppDocsKindIndexRouteImport.update({
+  id: '/docs/$kind/',
+  path: '/docs/$kind/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDocsKindIdRoute = AppDocsKindIdRouteImport.update({
+  id: '/docs/$kind/$id',
+  path: '/docs/$kind/$id',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppDocsKindNewRoute = AppDocsKindNewRouteImport.update({
+  id: '/docs/$kind/new',
+  path: '/docs/$kind/new',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/app/accounts': typeof AppAccountsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/app/customers/$id': typeof AppCustomersIdRoute
   '/app/customers/new': typeof AppCustomersNewRoute
+  '/app/reports/$slug': typeof AppReportsSlugRoute
   '/app/customers/': typeof AppCustomersIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
+  '/app/docs/$kind/$id': typeof AppDocsKindIdRoute
+  '/app/docs/$kind/new': typeof AppDocsKindNewRoute
+  '/app/docs/$kind/': typeof AppDocsKindIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/app/accounts': typeof AppAccountsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
   '/app/customers/$id': typeof AppCustomersIdRoute
   '/app/customers/new': typeof AppCustomersNewRoute
+  '/app/reports/$slug': typeof AppReportsSlugRoute
   '/app/customers': typeof AppCustomersIndexRoute
   '/app/inventory': typeof AppInventoryIndexRoute
+  '/app/docs/$kind/$id': typeof AppDocsKindIdRoute
+  '/app/docs/$kind/new': typeof AppDocsKindNewRoute
+  '/app/docs/$kind': typeof AppDocsKindIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/app/accounts': typeof AppAccountsRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/app/customers/$id': typeof AppCustomersIdRoute
   '/app/customers/new': typeof AppCustomersNewRoute
+  '/app/reports/$slug': typeof AppReportsSlugRoute
   '/app/customers/': typeof AppCustomersIndexRoute
   '/app/inventory/': typeof AppInventoryIndexRoute
+  '/app/docs/$kind/$id': typeof AppDocsKindIdRoute
+  '/app/docs/$kind/new': typeof AppDocsKindNewRoute
+  '/app/docs/$kind/': typeof AppDocsKindIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -104,33 +149,48 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/app/accounts'
     | '/app/settings'
     | '/app/'
     | '/app/customers/$id'
     | '/app/customers/new'
+    | '/app/reports/$slug'
     | '/app/customers/'
     | '/app/inventory/'
+    | '/app/docs/$kind/$id'
+    | '/app/docs/$kind/new'
+    | '/app/docs/$kind/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/app/accounts'
     | '/app/settings'
     | '/app'
     | '/app/customers/$id'
     | '/app/customers/new'
+    | '/app/reports/$slug'
     | '/app/customers'
     | '/app/inventory'
+    | '/app/docs/$kind/$id'
+    | '/app/docs/$kind/new'
+    | '/app/docs/$kind'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/login'
+    | '/app/accounts'
     | '/app/settings'
     | '/app/'
     | '/app/customers/$id'
     | '/app/customers/new'
+    | '/app/reports/$slug'
     | '/app/customers/'
     | '/app/inventory/'
+    | '/app/docs/$kind/$id'
+    | '/app/docs/$kind/new'
+    | '/app/docs/$kind/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -169,6 +229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/accounts': {
+      id: '/app/accounts'
+      path: '/accounts'
+      fullPath: '/app/accounts'
+      preLoaderRoute: typeof AppAccountsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/settings': {
       id: '/app/settings'
       path: '/settings'
@@ -204,25 +271,63 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInventoryIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/reports/$slug': {
+      id: '/app/reports/$slug'
+      path: '/reports/$slug'
+      fullPath: '/app/reports/$slug'
+      preLoaderRoute: typeof AppReportsSlugRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/docs/$kind/': {
+      id: '/app/docs/$kind/'
+      path: '/docs/$kind'
+      fullPath: '/app/docs/$kind/'
+      preLoaderRoute: typeof AppDocsKindIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/docs/$kind/$id': {
+      id: '/app/docs/$kind/$id'
+      path: '/docs/$kind/$id'
+      fullPath: '/app/docs/$kind/$id'
+      preLoaderRoute: typeof AppDocsKindIdRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/docs/$kind/new': {
+      id: '/app/docs/$kind/new'
+      path: '/docs/$kind/new'
+      fullPath: '/app/docs/$kind/new'
+      preLoaderRoute: typeof AppDocsKindNewRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
 interface AppRouteRouteChildren {
+  AppAccountsRoute: typeof AppAccountsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCustomersIdRoute: typeof AppCustomersIdRoute
   AppCustomersNewRoute: typeof AppCustomersNewRoute
+  AppReportsSlugRoute: typeof AppReportsSlugRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppInventoryIndexRoute: typeof AppInventoryIndexRoute
+  AppDocsKindIdRoute: typeof AppDocsKindIdRoute
+  AppDocsKindNewRoute: typeof AppDocsKindNewRoute
+  AppDocsKindIndexRoute: typeof AppDocsKindIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppAccountsRoute: AppAccountsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
   AppCustomersIdRoute: AppCustomersIdRoute,
   AppCustomersNewRoute: AppCustomersNewRoute,
+  AppReportsSlugRoute: AppReportsSlugRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppInventoryIndexRoute: AppInventoryIndexRoute,
+  AppDocsKindIdRoute: AppDocsKindIdRoute,
+  AppDocsKindNewRoute: AppDocsKindNewRoute,
+  AppDocsKindIndexRoute: AppDocsKindIndexRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
@@ -237,3 +342,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
