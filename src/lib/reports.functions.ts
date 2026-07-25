@@ -33,6 +33,10 @@ export const dashboardSummary = createServerFn({ method: "GET" }).handler(async 
          WHEN 'sale_return' THEN -(total_toman - paid_toman)
          WHEN 'receive' THEN -paid_toman
          WHEN 'receive_check' THEN -paid_toman
+         WHEN 'purchase' THEN -(total_toman - paid_toman)
+         WHEN 'purchase_return' THEN (total_toman - paid_toman)
+         WHEN 'pay' THEN paid_toman
+         WHEN 'pay_check' THEN paid_toman
          ELSE 0
        END
      ),0)::text AS v FROM documents WHERE customer_id IS NOT NULL`,
@@ -98,6 +102,10 @@ export const customerBalances = createServerFn({ method: "GET" }).handler(async 
                 WHEN 'sale_return' THEN -(d.total_toman - d.paid_toman)
                 WHEN 'receive' THEN -d.paid_toman
                 WHEN 'receive_check' THEN -d.paid_toman
+                WHEN 'purchase' THEN -(d.total_toman - d.paid_toman)
+                WHEN 'purchase_return' THEN (d.total_toman - d.paid_toman)
+                WHEN 'pay' THEN d.paid_toman
+                WHEN 'pay_check' THEN d.paid_toman
                 ELSE 0
               END
             ),0)::text AS balance

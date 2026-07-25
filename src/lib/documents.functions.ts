@@ -145,6 +145,43 @@ export const createSale = createServerFn({ method: "POST" })
     return { id: doc!.id };
   });
 
+const purchaseSchema = z.object({
+  customer_id: z.number().int().nullable().optional(),
+  items: z.array(saleItemSchema).min(1),
+  paid_toman: z.number().int().nonnegative().default(0),
+  notes: z.string().max(2000).optional().nullable(),
+});
+
+/** Create a purchase invoice: inserts doc + items, increments stock. */
+export const createPurchase = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => purchaseSchema.parse(d))
+  .handler(async ({ data }) => {
+    await requireUser();
+    const total = data.items.reduce(
+      (s, it) => s + Math.round(it.quantity * it.unit_price_toman),
+      0,
+    );
+    const doc = await one<{ id: number }>(
+      `INSERT INTO documents (kind, customer_id, total_toman, paid_toman, notes)
+       VALUES ('purchase', $1, $2, $3, $4) RETURNING id`,
+      [data.customer_id ?? null, total, Math.min(data.paid_toman, total), data.notes || null],
+    );
+    for (const it of data.items) {
+      await query(
+        `INSERT INTO document_items (document_id, product_id, description, quantity, unit_price_toman)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [doc!.id, it.product_id ?? null, it.description, it.quantity, it.unit_price_toman],
+      );
+      if (it.product_id) {
+        await query(
+          `UPDATE products SET stock = stock + $2, updated_at = NOW() WHERE id = $1`,
+          [it.product_id, it.quantity],
+        );
+      }
+    }
+    return { id: doc!.id };
+  });
+
 const receiveSchema = z.object({
   customer_id: z.number().int(),
   amount_toman: z.number().int().positive(),

@@ -7,6 +7,7 @@ import {
   DOC_KINDS,
   KIND_LABEL,
   createSale,
+  createPurchase,
   createReceive,
   createSimpleDoc,
   type DocKind,
@@ -95,25 +96,19 @@ type LineItem = {
   unit_price_toman: string;
 };
 
-function ProductSearch({ onPick }: { onPick: (p: { id: number; name: string; price: number }) => void }) {
+function ProductSearch({
+  onPick,
+  onCustom,
+}: {
+  onPick: (p: { id: number; name: string; price: number }) => void;
+  onCustom: (name: string) => void;
+}) {
   const [q, setQ] = useState("");
   const { data } = useSuspenseQuery({
     queryKey: ["products", q],
     queryFn: () => listProducts({ data: { q } }),
   });
-  if (!q.trim()) {
-    return (
-      <div className="relative">
-        <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="جست‌وجوی کالا برای افزودن…"
-          className="w-full rounded-xl border border-input bg-background py-2.5 pe-10 ps-3 outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
-        />
-      </div>
-    );
-  }
+  const trimmed = q.trim();
   return (
     <div className="space-y-2">
       <div className="relative">
@@ -121,41 +116,57 @@ function ProductSearch({ onPick }: { onPick: (p: { id: number; name: string; pri
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="جست‌وجوی کالا…"
+          placeholder="نام کالا را بنویسید یا انتخاب کنید…"
           className="w-full rounded-xl border border-input bg-background py-2.5 pe-10 ps-3 outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
         />
       </div>
-      <ul className="max-h-64 overflow-y-auto rounded-xl border border-border bg-card">
-        {data.slice(0, 40).map((p) => (
-          <li key={p.id}>
+      {trimmed && (
+        <ul className="max-h-64 overflow-y-auto rounded-xl border border-border bg-card">
+          {data.slice(0, 40).map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                onClick={() => {
+                  onPick({ id: p.id, name: p.name, price: Number(p.unit_price_toman) });
+                  setQ("");
+                }}
+                className="flex w-full items-center justify-between gap-2 border-b border-border px-3 py-2 text-right last:border-0 hover:bg-accent"
+              >
+                <div className="min-w-0">
+                  <div className="truncate font-bold">{p.name}</div>
+                  {p.weight && (
+                    <div className="text-[11px] text-muted-foreground">{p.weight}</div>
+                  )}
+                </div>
+                <div className="text-xs font-black text-primary num">
+                  {formatToman(p.unit_price_toman)}
+                </div>
+              </button>
+            </li>
+          ))}
+          <li>
             <button
               type="button"
               onClick={() => {
-                onPick({ id: p.id, name: p.name, price: Number(p.unit_price_toman) });
+                onCustom(trimmed);
                 setQ("");
               }}
-              className="flex w-full items-center justify-between gap-2 border-b border-border px-3 py-2 text-right last:border-0 hover:bg-accent"
+              className="flex w-full items-center gap-2 border-t border-border px-3 py-2.5 text-right text-sm font-bold text-primary hover:bg-primary/10"
             >
-              <div className="min-w-0">
-                <div className="truncate font-bold">{p.name}</div>
-                {p.weight && (
-                  <div className="text-[11px] text-muted-foreground">{p.weight}</div>
-                )}
-              </div>
-              <div className="text-xs font-black text-primary num">
-                {formatToman(p.unit_price_toman)}
-              </div>
+              <Plus className="h-4 w-4" />
+              افزودن «{trimmed}» به عنوان کالای جدید
             </button>
           </li>
-        ))}
-      </ul>
+        </ul>
+      )}
     </div>
   );
 }
 
-function SaleForm() {
+function InvoiceForm({ mode }: { mode: "sale" | "purchase" }) {
   const qc = useQueryClient();
-  const save = useServerFn(createSale);
+  const saveSale = useServerFn(createSale);
+  const savePurchase = useServerFn(createPurchase);
   const navigate = useNavigate();
   const [customer, setCustomer] = useState<{ id: number; name: string } | null>(null);
   const [items, setItems] = useState<LineItem[]>([]);
@@ -163,6 +174,13 @@ function SaleForm() {
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  const isSale = mode === "sale";
+  const partyLabel = isSale ? "مشتری" : "تأمین‌کننده / فروشنده";
+  const submitLabel = isSale ? "ثبت فروش" : "ثبت خرید";
+  const remainingLabel = isSale
+    ? "مانده (مشتری بدهکار می‌ماند)"
+    : "مانده (ما بدهکار می‌مانیم)";
 
   const total = useMemo(
     () =>
@@ -183,30 +201,34 @@ function SaleForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    if (!customer) return setErr("مشتری را انتخاب کنید.");
+    if (!customer) return setErr(`${partyLabel} را انتخاب کنید.`);
     if (items.length === 0) return setErr("حداقل یک قلم کالا اضافه کنید.");
     setBusy(true);
     try {
-      const res = await save({
-        data: {
-          customer_id: customer.id,
-          items: items.map((it) => ({
-            product_id: it.product_id,
-            description: it.description,
-            quantity: Number(toEn(it.quantity)) || 0,
-            unit_price_toman: Math.round(Number(toEn(it.unit_price_toman)) || 0),
-          })),
-          paid_toman: Math.round(Number(toEn(paid)) || 0),
-          notes: notes || null,
-        },
-      });
+      const payload = {
+        customer_id: customer.id,
+        items: items.map((it) => ({
+          product_id: it.product_id,
+          description: it.description,
+          quantity: Number(toEn(it.quantity)) || 0,
+          unit_price_toman: Math.round(Number(toEn(it.unit_price_toman)) || 0),
+        })),
+        paid_toman: Math.round(Number(toEn(paid)) || 0),
+        notes: notes || null,
+      };
+      const res = isSale
+        ? await saveSale({ data: payload })
+        : await savePurchase({ data: payload });
       await qc.invalidateQueries({ queryKey: ["documents"] });
       await qc.invalidateQueries({ queryKey: ["products"] });
       await qc.invalidateQueries({ queryKey: ["dashboardSummary"] });
       await qc.invalidateQueries({ queryKey: ["customerBalances"] });
-      await navigate({ to: "/app/docs/$kind/$id", params: { kind: "sale", id: String(res.id) } });
+      await navigate({
+        to: "/app/docs/$kind/$id",
+        params: { kind: mode, id: String(res.id) },
+      });
     } catch (e) {
-      setErr((e as Error).message || "خطا در ثبت فاکتور");
+      setErr((e as Error).message || "خطا در ثبت");
     } finally {
       setBusy(false);
     }
@@ -226,13 +248,13 @@ function SaleForm() {
         </Suspense>
         {customer && (
           <div className="mt-2 rounded-xl bg-primary/10 px-3 py-2 text-sm font-bold text-primary">
-            انتخاب‌شده: {customer.name}
+            {partyLabel}: {customer.name}
           </div>
         )}
       </div>
 
       <div className="rounded-3xl bg-card p-4 shadow-card">
-        <h2 className="mb-2 text-sm font-black text-muted-foreground">اقلام فاکتور</h2>
+        <h2 className="mb-2 text-sm font-black text-muted-foreground">اقلام</h2>
         <Suspense fallback={<div className="h-16 animate-pulse rounded-xl bg-secondary" />}>
           <ProductSearch
             onPick={(p) =>
@@ -247,6 +269,18 @@ function SaleForm() {
                 },
               ])
             }
+            onCustom={(name) =>
+              setItems((arr) => [
+                ...arr,
+                {
+                  key: Math.random().toString(36),
+                  product_id: null,
+                  description: name,
+                  quantity: "1",
+                  unit_price_toman: "0",
+                },
+              ])
+            }
           />
         </Suspense>
         {items.length > 0 && (
@@ -254,7 +288,14 @@ function SaleForm() {
             {items.map((it, i) => (
               <li key={it.key} className="rounded-xl border border-border p-2">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1 font-bold">{it.description}</div>
+                  <div className="min-w-0 flex-1 font-bold">
+                    {it.description}
+                    {it.product_id === null && (
+                      <span className="ms-2 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                        کالای جدید
+                      </span>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeItem(i)}
@@ -302,7 +343,7 @@ function SaleForm() {
         </div>
         <label className="block">
           <span className="mb-1 block text-xs font-bold text-muted-foreground">
-            پرداخت نقدی (این لحظه)
+            {isSale ? "چقدر گرفتی؟ (نقد این لحظه)" : "چقدر دادی؟ (نقد این لحظه)"}
           </span>
           <input
             value={paid}
@@ -310,9 +351,32 @@ function SaleForm() {
             inputMode="numeric"
             className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-right num"
           />
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPaid("0")}
+              className="rounded-lg bg-secondary px-2 py-1 text-[11px] font-bold text-secondary-foreground"
+            >
+              نسیه (۰)
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaid(String(Math.round(total)))}
+              className="rounded-lg bg-secondary px-2 py-1 text-[11px] font-bold text-secondary-foreground"
+            >
+              نقد کامل
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaid(String(Math.round(total / 2)))}
+              className="rounded-lg bg-secondary px-2 py-1 text-[11px] font-bold text-secondary-foreground"
+            >
+              نصف
+            </button>
+          </div>
         </label>
         <div className="flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2 text-rose-800">
-          <span className="text-sm font-bold">مانده (بدهکار می‌ماند)</span>
+          <span className="text-sm font-bold">{remainingLabel}</span>
           <span className="font-black num">{formatToman(remaining)} تومان</span>
         </div>
         <label className="block">
@@ -337,7 +401,7 @@ function SaleForm() {
         disabled={busy}
         className="w-full rounded-2xl bg-primary py-3.5 text-base font-black text-primary-foreground shadow-soft disabled:opacity-60"
       >
-        {busy ? "در حال ثبت…" : "ثبت فاکتور"}
+        {busy ? "در حال ثبت…" : submitLabel}
       </button>
     </form>
   );
@@ -469,11 +533,19 @@ function NewDocPage() {
         {KIND_LABEL[kind]}
       </Link>
       <h1 className="text-2xl font-black text-foreground">{KIND_LABEL[kind]} جدید</h1>
-      {kind === "sale" ? <SaleForm /> : <ReceiveForm kind={kind} />}
+      {kind === "sale" ? (
+        <InvoiceForm mode="sale" />
+      ) : kind === "purchase" ? (
+        <InvoiceForm mode="purchase" />
+      ) : (
+        <ReceiveForm kind={kind} />
+      )}
       <p className="pt-2 text-xs text-muted-foreground">
         {kind === "sale"
-          ? "با ثبت فاکتور، موجودی انبار بروزرسانی و مانده مشتری محاسبه می‌شود."
-          : "این سند، صندوق و مانده حساب مشتری را بروزرسانی می‌کند."}
+          ? "با ثبت فاکتور، موجودی انبار کم و مانده مشتری محاسبه می‌شود."
+          : kind === "purchase"
+            ? "با ثبت خرید، موجودی انبار افزوده و مانده تأمین‌کننده محاسبه می‌شود."
+            : "این سند، صندوق و مانده حساب مشتری را بروزرسانی می‌کند."}
       </p>
     </div>
   );

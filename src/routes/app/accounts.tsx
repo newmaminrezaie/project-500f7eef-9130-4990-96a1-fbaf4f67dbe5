@@ -53,46 +53,60 @@ function Summary() {
   );
 }
 
-function Debtors() {
+function BalancesList({
+  filter,
+  emptyMsg,
+  toneClass,
+}: {
+  filter: "debtors" | "creditors";
+  emptyMsg: string;
+  toneClass: string;
+}) {
   const { data } = useSuspenseQuery({
     queryKey: ["customerBalances"],
     queryFn: () => customerBalances(),
   });
-  const debtors = data.filter((c) => Number(c.balance) > 0);
-  if (debtors.length === 0) {
+  const rows =
+    filter === "debtors"
+      ? data.filter((c) => Number(c.balance) > 0)
+      : data.filter((c) => Number(c.balance) < 0);
+  if (rows.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-secondary/50 p-6 text-center text-sm text-muted-foreground">
-        هیچ مشتری بدهکاری ندارد.
+        {emptyMsg}
       </div>
     );
   }
   return (
     <ul className="space-y-2">
-      {debtors.slice(0, 30).map((c) => (
-        <li key={c.id}>
-          <Link
-            to="/app/customers/$id"
-            params={{ id: String(c.id) }}
-            className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card active:bg-accent"
-          >
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 font-bold text-primary">
-              {c.name.trim().charAt(0)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate font-bold text-foreground">{c.name}</div>
-              {c.phone && (
-                <div className="truncate text-xs text-muted-foreground num">{c.phone}</div>
-              )}
-            </div>
-            <div className="text-left">
-              <div className="text-sm font-black num text-rose-700">
-                {formatToman(c.balance)}
+      {rows.slice(0, 30).map((c) => {
+        const amount = Math.abs(Number(c.balance));
+        return (
+          <li key={c.id}>
+            <Link
+              to="/app/customers/$id"
+              params={{ id: String(c.id) }}
+              className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card active:bg-accent"
+            >
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 font-bold text-primary">
+                {c.name.trim().charAt(0)}
               </div>
-              <div className="text-[11px] text-muted-foreground">تومان</div>
-            </div>
-          </Link>
-        </li>
-      ))}
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-bold text-foreground">{c.name}</div>
+                {c.phone && (
+                  <div className="truncate text-xs text-muted-foreground num">{c.phone}</div>
+                )}
+              </div>
+              <div className="text-left">
+                <div className={`text-sm font-black num ${toneClass}`}>
+                  {formatToman(amount)}
+                </div>
+                <div className="text-[11px] text-muted-foreground">تومان</div>
+              </div>
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -102,17 +116,34 @@ function AccountsPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-black text-foreground">حساب‌ها</h1>
-        <p className="text-sm text-muted-foreground">وضعیت صندوق و بدهکاران در یک نگاه.</p>
+        <p className="text-sm text-muted-foreground">صندوق، بدهکاران و طلبکاران در یک نگاه.</p>
       </div>
       <Suspense fallback={<div className="h-40 animate-pulse rounded-3xl bg-secondary" />}>
         <Summary />
       </Suspense>
-      <div className="flex items-center justify-between px-1">
-        <h2 className="text-sm font-black text-muted-foreground">مشتریان بدهکار</h2>
+
+      <div className="flex items-center justify-between px-1 pt-2">
+        <h2 className="text-sm font-black text-muted-foreground">مشتریان بدهکار (به ما بدهکارند)</h2>
         <Users className="h-4 w-4 text-muted-foreground" />
       </div>
       <Suspense fallback={<div className="h-24 animate-pulse rounded-2xl bg-secondary" />}>
-        <Debtors />
+        <BalancesList
+          filter="debtors"
+          emptyMsg="هیچ‌کس به ما بدهکار نیست."
+          toneClass="text-rose-700"
+        />
+      </Suspense>
+
+      <div className="flex items-center justify-between px-1 pt-2">
+        <h2 className="text-sm font-black text-muted-foreground">ما بدهکاریم (به تأمین‌کنندگان)</h2>
+        <Users className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <Suspense fallback={<div className="h-24 animate-pulse rounded-2xl bg-secondary" />}>
+        <BalancesList
+          filter="creditors"
+          emptyMsg="ما به کسی بدهکار نیستیم."
+          toneClass="text-sky-700"
+        />
       </Suspense>
     </div>
   );

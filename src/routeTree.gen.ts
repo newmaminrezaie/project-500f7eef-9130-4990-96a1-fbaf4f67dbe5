@@ -14,6 +14,7 @@ import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppAccountsRouteImport } from './routes/app/accounts'
+import { Route as AppAdvancedRouteImport } from './routes/app/advanced'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppCustomersIndexRouteImport } from './routes/app/customers/index'
 import { Route as AppCustomersIdRouteImport } from './routes/app/customers/$id'
@@ -47,6 +48,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppAccountsRoute = AppAccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppAdvancedRoute = AppAdvancedRouteImport.update({
+  id: '/advanced',
+  path: '/advanced',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/app/accounts': typeof AppAccountsRoute
+  '/app/advanced': typeof AppAdvancedRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/app/customers/$id': typeof AppCustomersIdRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/app/accounts': typeof AppAccountsRoute
+  '/app/advanced': typeof AppAdvancedRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
   '/app/customers/$id': typeof AppCustomersIdRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/app/accounts': typeof AppAccountsRoute
+  '/app/advanced': typeof AppAdvancedRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/app/customers/$id': typeof AppCustomersIdRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/accounts'
+    | '/app/advanced'
     | '/app/settings'
     | '/app/'
     | '/app/customers/$id'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/app/accounts'
+    | '/app/advanced'
     | '/app/settings'
     | '/app'
     | '/app/customers/$id'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/accounts'
+    | '/app/advanced'
     | '/app/settings'
     | '/app/'
     | '/app/customers/$id'
@@ -234,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts'
       fullPath: '/app/accounts'
       preLoaderRoute: typeof AppAccountsRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/advanced': {
+      id: '/app/advanced'
+      path: '/advanced'
+      fullPath: '/app/advanced'
+      preLoaderRoute: typeof AppAdvancedRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/settings': {
@@ -304,6 +323,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteRouteChildren {
   AppAccountsRoute: typeof AppAccountsRoute
+  AppAdvancedRoute: typeof AppAdvancedRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCustomersIdRoute: typeof AppCustomersIdRoute
@@ -318,6 +338,7 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppAccountsRoute: AppAccountsRoute,
+  AppAdvancedRoute: AppAdvancedRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
   AppCustomersIdRoute: AppCustomersIdRoute,
@@ -342,13 +363,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
