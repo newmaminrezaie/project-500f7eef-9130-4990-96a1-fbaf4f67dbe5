@@ -151,6 +151,32 @@ export function ensureSchema(): Promise<void> {
           ALTER TABLE payments RENAME COLUMN amount_rial TO amount_toman;
         END IF;
       END $mig$;
+
+      -- v2: Yas-style accounting documents (sales, purchases, receives, pays, checks, expenses, incomes, returns, proforma)
+      CREATE TABLE IF NOT EXISTS documents (
+        id            SERIAL PRIMARY KEY,
+        kind          TEXT NOT NULL,
+        customer_id   INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+        doc_date      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        total_toman   BIGINT NOT NULL DEFAULT 0,
+        paid_toman    BIGINT NOT NULL DEFAULT 0,
+        notes         TEXT,
+        meta          JSONB,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS documents_kind_idx ON documents(kind);
+      CREATE INDEX IF NOT EXISTS documents_customer_idx ON documents(customer_id);
+      CREATE INDEX IF NOT EXISTS documents_date_idx ON documents(doc_date DESC);
+
+      CREATE TABLE IF NOT EXISTS document_items (
+        id                SERIAL PRIMARY KEY,
+        document_id       INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+        product_id        INTEGER REFERENCES products(id) ON DELETE SET NULL,
+        description       TEXT NOT NULL,
+        quantity          NUMERIC(14,3) NOT NULL DEFAULT 1,
+        unit_price_toman  BIGINT NOT NULL DEFAULT 0
+      );
+      CREATE INDEX IF NOT EXISTS document_items_doc_idx ON document_items(document_id);
     `);
 
     // Seed catalog from the Golden Saffron Bazaar shop if empty.
