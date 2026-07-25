@@ -1,3 +1,4 @@
+@import "@fontsource-variable/vazirmatn";
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -8,7 +9,7 @@
 
 @theme inline {
   --font-sans:
-    "Vazirmatn", "Sahel", "IRANSans", "Segoe UI", Tahoma, system-ui, -apple-system, sans-serif;
+    "Vazirmatn Variable", "Vazirmatn", "Segoe UI", Tahoma, system-ui, -apple-system, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -89,8 +90,8 @@
 
   html {
     font-family: var(--font-sans);
-    /* Persian digits look better without tabular in body */
-    font-feature-settings: "ss01", "cv11";
+    font-feature-settings: "ss01", "ss02", "ss03";
+    -webkit-text-size-adjust: 100%;
   }
 
   html[dir="rtl"] body {
@@ -102,30 +103,35 @@
     color: var(--color-foreground);
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
-    font-size: 17px;
-    line-height: 1.7;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 18px;
+    line-height: 1.85;
+    font-weight: 450;
   }
 
-  /* Ensure inputs are large enough for older users on Android */
+  /* Bigger, easier taps for older users */
   input,
   textarea,
   select,
   button {
     font-family: inherit;
-    font-size: 17px;
+    font-size: 18px;
+    line-height: 1.6;
   }
 
-  /* Prevent iOS/Android zoom-on-focus for inputs */
+  /* Prevent Android zoom-on-focus */
   input,
   textarea,
   select {
-    font-size: 17px;
+    font-size: 18px;
   }
 
   h1,
   h2,
   h3 {
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
+    font-weight: 700;
+    line-height: 1.5;
   }
 }
 
