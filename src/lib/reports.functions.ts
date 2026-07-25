@@ -92,6 +92,51 @@ export const inventoryReport = createServerFn({ method: "GET" }).handler(async (
   return { byCategory: rows, totalValue: Number(total?.v ?? 0) };
 });
 
+/** Profit = SUM(qty * (sale_price - avg_cost)) across all sales; also today's slice + recent sales. */
+export const profitReport = createServerFn({ method: "GET" }).handler(async () => {
+  await requireUser();
+  const totals = await one<{ total: string; today: string }>(
+    `SELECT
+       COALESCE(SUM(di.quantity * (di.unit_price_toman - COALESCE(p.avg_cost_toman,0))),0)::text AS total,
+       COALESCE(SUM(CASE WHEN d.doc_date::date = CURRENT_DATE
+                         THEN di.quantity * (di.unit_price_toman - COALESCE(p.avg_cost_toman,0))
+                         ELSE 0 END),0)::text AS today
+       FROM document_items di
+       JOIN documents d ON d.id = di.document_id
+  LEFT JOIN products p ON p.id = di.product_id
+      WHERE d.kind = 'sale'`,
+  );
+  const recent = await many<{
+    id: number;
+    doc_date: string;
+    customer_name: string | null;
+    total_toman: string;
+    profit: string;
+  }>(
+    `SELECT d.id, d.doc_date, c.name AS customer_name, d.total_toman::text,
+            COALESCE(SUM(di.quantity * (di.unit_price_toman - COALESCE(p.avg_cost_toman,0))),0)::text AS profit
+       FROM documents d
+  LEFT JOIN customers c ON c.id = d.customer_id
+  LEFT JOIN document_items di ON di.document_id = d.id
+  LEFT JOIN products p ON p.id = di.product_id
+      WHERE d.kind = 'sale'
+   GROUP BY d.id, c.name
+   ORDER BY d.doc_date DESC, d.id DESC
+      LIMIT 20`,
+  );
+  return {
+    totalProfit: Number(totals?.total ?? 0),
+    todayProfit: Number(totals?.today ?? 0),
+    recent: recent.map((r) => ({
+      id: r.id,
+      doc_date: r.doc_date,
+      customer_name: r.customer_name,
+      total: Number(r.total_toman),
+      profit: Number(r.profit),
+    })),
+  };
+});
+
 export const customerBalances = createServerFn({ method: "GET" }).handler(async () => {
   await requireUser();
   return many<{ id: number; name: string; phone: string | null; balance: string }>(

@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
-import { Wallet, TrendingUp, TrendingDown, Users } from "lucide-react";
-import { dashboardSummary, customerBalances } from "@/lib/reports.functions";
-import { formatToman, toFa } from "@/lib/format";
+import { Wallet, TrendingUp, TrendingDown, Users, LineChart } from "lucide-react";
+import { dashboardSummary, customerBalances, profitReport } from "@/lib/reports.functions";
+import { formatToman, toFa, formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/app/accounts")({
   head: () => ({ meta: [{ title: "حساب‌ها — حسابداری زعفران رضایی" }] }),
@@ -111,6 +111,76 @@ function BalancesList({
   );
 }
 
+function ProfitSection() {
+  const { data } = useSuspenseQuery({
+    queryKey: ["profitReport"],
+    queryFn: () => profitReport(),
+  });
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-card p-4 shadow-card">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <LineChart className="h-4 w-4 text-amber-600" />
+            سود امروز
+          </div>
+          <div className={`mt-1 text-lg font-black num ${data.todayProfit >= 0 ? "text-amber-700" : "text-rose-700"}`}>
+            {formatToman(data.todayProfit)}
+          </div>
+        </div>
+        <div className="rounded-2xl bg-card p-4 shadow-card">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <LineChart className="h-4 w-4 text-sky-600" />
+            سود کل
+          </div>
+          <div className={`mt-1 text-lg font-black num ${data.totalProfit >= 0 ? "text-sky-700" : "text-rose-700"}`}>
+            {formatToman(data.totalProfit)}
+          </div>
+        </div>
+      </div>
+
+      {data.recent.length > 0 && (
+        <div>
+          <div className="px-1 pb-2 text-sm font-black text-muted-foreground">
+            سود آخرین فروش‌ها
+          </div>
+          <ul className="space-y-2">
+            {data.recent.map((s) => {
+              const pos = s.profit >= 0;
+              return (
+                <li key={s.id}>
+                  <Link
+                    to="/app/docs/$kind/$id"
+                    params={{ kind: "sale", id: String(s.id) }}
+                    className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card active:bg-accent"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-bold text-foreground">
+                        {s.customer_name || "—"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(s.doc_date)} · فروش {formatToman(s.total)}
+                      </div>
+                    </div>
+                    <div className="text-left">
+                      <div className={`text-sm font-black num ${pos ? "text-emerald-700" : "text-rose-700"}`}>
+                        {pos ? "+" : "−"}{formatToman(Math.abs(s.profit))}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {pos ? "سود" : "زیان"}
+                      </div>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AccountsPage() {
   return (
     <div className="space-y-4">
@@ -120,6 +190,14 @@ function AccountsPage() {
       </div>
       <Suspense fallback={<div className="h-40 animate-pulse rounded-3xl bg-secondary" />}>
         <Summary />
+      </Suspense>
+
+      <div className="flex items-center justify-between px-1 pt-2">
+        <h2 className="text-sm font-black text-muted-foreground">سود و زیان</h2>
+        <LineChart className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <Suspense fallback={<div className="h-24 animate-pulse rounded-2xl bg-secondary" />}>
+        <ProfitSection />
       </Suspense>
 
       <div className="flex items-center justify-between px-1 pt-2">

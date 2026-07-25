@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { ShoppingCart, PackagePlus, Settings2 } from "lucide-react";
-import { dashboardSummary } from "@/lib/reports.functions";
+import { dashboardSummary, profitReport } from "@/lib/reports.functions";
 import { formatToman } from "@/lib/format";
 
 export const Route = createFileRoute("/app/")({
@@ -14,6 +14,10 @@ function TodayStrip() {
   const { data } = useSuspenseQuery({
     queryKey: ["dashboardSummary"],
     queryFn: () => dashboardSummary(),
+  });
+  const { data: profit } = useSuspenseQuery({
+    queryKey: ["profitReport"],
+    queryFn: () => profitReport(),
   });
   const today = new Intl.DateTimeFormat("fa-IR", {
     weekday: "long",
@@ -36,6 +40,18 @@ function TodayStrip() {
           <div className="text-xs text-rose-800/80">مانده بدهی مشتریان</div>
           <div className="mt-1 num text-lg font-black text-rose-800">
             {formatToman(data.owed)}
+          </div>
+        </div>
+        <div className="rounded-2xl bg-amber-50 p-3">
+          <div className="text-xs text-amber-900/80">سود امروز</div>
+          <div className={`mt-1 num text-lg font-black ${profit.todayProfit >= 0 ? "text-amber-900" : "text-rose-800"}`}>
+            {formatToman(profit.todayProfit)}
+          </div>
+        </div>
+        <div className="rounded-2xl bg-sky-50 p-3">
+          <div className="text-xs text-sky-900/80">سود کل</div>
+          <div className={`mt-1 num text-lg font-black ${profit.totalProfit >= 0 ? "text-sky-900" : "text-rose-800"}`}>
+            {formatToman(profit.totalProfit)}
           </div>
         </div>
       </div>
