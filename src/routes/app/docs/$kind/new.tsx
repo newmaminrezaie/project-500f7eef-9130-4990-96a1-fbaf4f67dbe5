@@ -7,6 +7,7 @@ import {
   DOC_KINDS,
   KIND_LABEL,
   createSale,
+  createPurchase,
   createReceive,
   createSimpleDoc,
   type DocKind,
@@ -95,25 +96,19 @@ type LineItem = {
   unit_price_toman: string;
 };
 
-function ProductSearch({ onPick }: { onPick: (p: { id: number; name: string; price: number }) => void }) {
+function ProductSearch({
+  onPick,
+  onCustom,
+}: {
+  onPick: (p: { id: number; name: string; price: number }) => void;
+  onCustom: (name: string) => void;
+}) {
   const [q, setQ] = useState("");
   const { data } = useSuspenseQuery({
     queryKey: ["products", q],
     queryFn: () => listProducts({ data: { q } }),
   });
-  if (!q.trim()) {
-    return (
-      <div className="relative">
-        <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="جست‌وجوی کالا برای افزودن…"
-          className="w-full rounded-xl border border-input bg-background py-2.5 pe-10 ps-3 outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
-        />
-      </div>
-    );
-  }
+  const trimmed = q.trim();
   return (
     <div className="space-y-2">
       <div className="relative">
@@ -121,34 +116,49 @@ function ProductSearch({ onPick }: { onPick: (p: { id: number; name: string; pri
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="جست‌وجوی کالا…"
+          placeholder="نام کالا را بنویسید یا انتخاب کنید…"
           className="w-full rounded-xl border border-input bg-background py-2.5 pe-10 ps-3 outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
         />
       </div>
-      <ul className="max-h-64 overflow-y-auto rounded-xl border border-border bg-card">
-        {data.slice(0, 40).map((p) => (
-          <li key={p.id}>
+      {trimmed && (
+        <ul className="max-h-64 overflow-y-auto rounded-xl border border-border bg-card">
+          {data.slice(0, 40).map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                onClick={() => {
+                  onPick({ id: p.id, name: p.name, price: Number(p.unit_price_toman) });
+                  setQ("");
+                }}
+                className="flex w-full items-center justify-between gap-2 border-b border-border px-3 py-2 text-right last:border-0 hover:bg-accent"
+              >
+                <div className="min-w-0">
+                  <div className="truncate font-bold">{p.name}</div>
+                  {p.weight && (
+                    <div className="text-[11px] text-muted-foreground">{p.weight}</div>
+                  )}
+                </div>
+                <div className="text-xs font-black text-primary num">
+                  {formatToman(p.unit_price_toman)}
+                </div>
+              </button>
+            </li>
+          ))}
+          <li>
             <button
               type="button"
               onClick={() => {
-                onPick({ id: p.id, name: p.name, price: Number(p.unit_price_toman) });
+                onCustom(trimmed);
                 setQ("");
               }}
-              className="flex w-full items-center justify-between gap-2 border-b border-border px-3 py-2 text-right last:border-0 hover:bg-accent"
+              className="flex w-full items-center gap-2 border-t border-border px-3 py-2.5 text-right text-sm font-bold text-primary hover:bg-primary/10"
             >
-              <div className="min-w-0">
-                <div className="truncate font-bold">{p.name}</div>
-                {p.weight && (
-                  <div className="text-[11px] text-muted-foreground">{p.weight}</div>
-                )}
-              </div>
-              <div className="text-xs font-black text-primary num">
-                {formatToman(p.unit_price_toman)}
-              </div>
+              <Plus className="h-4 w-4" />
+              افزودن «{trimmed}» به عنوان کالای جدید
             </button>
           </li>
-        ))}
-      </ul>
+        </ul>
+      )}
     </div>
   );
 }
