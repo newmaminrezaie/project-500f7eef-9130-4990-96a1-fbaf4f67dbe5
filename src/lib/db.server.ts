@@ -94,6 +94,7 @@ export function ensureSchema(): Promise<void> {
       ALTER TABLE products ADD COLUMN IF NOT EXISTS badge TEXT;
       ALTER TABLE products ADD COLUMN IF NOT EXISTS short_description TEXT;
       ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS avg_cost_toman BIGINT NOT NULL DEFAULT 0;
       DO $mig$ BEGIN
         IF EXISTS (SELECT 1 FROM information_schema.columns
                    WHERE table_name='products' AND column_name='unit_price_rial') THEN
