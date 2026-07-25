@@ -167,15 +167,35 @@ export const createPurchase = createServerFn({ method: "POST" })
       [data.customer_id ?? null, total, Math.min(data.paid_toman, total), data.notes || null],
     );
     for (const it of data.items) {
+      let productId = it.product_id ?? null;
+      // Auto-create the product if the user typed a new name (no product_id).
+      if (!productId && it.description.trim()) {
+        const created = await one<{ id: number }>(
+          `INSERT INTO products (name, stock, avg_cost_toman, unit_price_toman)
+           VALUES ($1, 0, 0, 0) RETURNING id`,
+          [it.description.trim()],
+        );
+        productId = created!.id;
+      }
       await query(
         `INSERT INTO document_items (document_id, product_id, description, quantity, unit_price_toman)
          VALUES ($1,$2,$3,$4,$5)`,
-        [doc!.id, it.product_id ?? null, it.description, it.quantity, it.unit_price_toman],
+        [doc!.id, productId, it.description, it.quantity, it.unit_price_toman],
       );
-      if (it.product_id) {
+      if (productId) {
+        // Running weighted-average cost:
+        // new_avg = (old_avg * old_stock + price * qty) / (old_stock + qty)
         await query(
-          `UPDATE products SET stock = stock + $2, updated_at = NOW() WHERE id = $1`,
-          [it.product_id, it.quantity],
+          `UPDATE products
+              SET avg_cost_toman = CASE
+                    WHEN (stock + $2) > 0
+                    THEN ROUND((avg_cost_toman * stock + $3 * $2) / (stock + $2))
+                    ELSE avg_cost_toman
+                  END,
+                  stock = stock + $2,
+                  updated_at = NOW()
+            WHERE id = $1`,
+          [productId, it.quantity, it.unit_price_toman],
         );
       }
     }
