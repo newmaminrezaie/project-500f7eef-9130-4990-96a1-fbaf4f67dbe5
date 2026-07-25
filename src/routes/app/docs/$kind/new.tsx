@@ -533,11 +533,19 @@ function NewDocPage() {
         {KIND_LABEL[kind]}
       </Link>
       <h1 className="text-2xl font-black text-foreground">{KIND_LABEL[kind]} جدید</h1>
-      {kind === "sale" ? <SaleForm /> : <ReceiveForm kind={kind} />}
+      {kind === "sale" ? (
+        <InvoiceForm mode="sale" />
+      ) : kind === "purchase" ? (
+        <InvoiceForm mode="purchase" />
+      ) : (
+        <ReceiveForm kind={kind} />
+      )}
       <p className="pt-2 text-xs text-muted-foreground">
         {kind === "sale"
-          ? "با ثبت فاکتور، موجودی انبار بروزرسانی و مانده مشتری محاسبه می‌شود."
-          : "این سند، صندوق و مانده حساب مشتری را بروزرسانی می‌کند."}
+          ? "با ثبت فاکتور، موجودی انبار کم و مانده مشتری محاسبه می‌شود."
+          : kind === "purchase"
+            ? "با ثبت خرید، موجودی انبار افزوده و مانده تأمین‌کننده محاسبه می‌شود."
+            : "این سند، صندوق و مانده حساب مشتری را بروزرسانی می‌کند."}
       </p>
     </div>
   );
