@@ -65,45 +65,116 @@ export function ensureSchema(): Promise<void> {
       );
       CREATE INDEX IF NOT EXISTS customers_name_idx ON customers (name);
 
-      -- Reserved for v2 (invoices, payments, products) — created empty so
-      -- backups already carry them and future migrations are additive.
+      -- Inventory / products. Prices in TOMAN (تومان).
       CREATE TABLE IF NOT EXISTS products (
-        id          SERIAL PRIMARY KEY,
-        name        TEXT NOT NULL,
-        unit        TEXT,
-        unit_price_rial BIGINT NOT NULL DEFAULT 0,
-        stock       NUMERIC(14,3) NOT NULL DEFAULT 0,
-        notes       TEXT,
-        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        id                SERIAL PRIMARY KEY,
+        slug              TEXT UNIQUE,
+        name              TEXT NOT NULL,
+        category          TEXT,
+        weight            TEXT,
+        unit              TEXT,
+        unit_price_toman  BIGINT NOT NULL DEFAULT 0,
+        old_price_toman   BIGINT,
+        image_url         TEXT,
+        badge             TEXT,
+        short_description TEXT,
+        stock             NUMERIC(14,3) NOT NULL DEFAULT 0,
+        notes             TEXT,
+        created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      -- Additive migrations for older deployments where the products table
+      -- was created with the pre-Toman schema.
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS slug TEXT;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS category TEXT;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS weight TEXT;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS unit_price_toman BIGINT NOT NULL DEFAULT 0;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS old_price_toman BIGINT;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS badge TEXT;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS short_description TEXT;
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+      DO $mig$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='products' AND column_name='unit_price_rial') THEN
+          ALTER TABLE products DROP COLUMN unit_price_rial;
+        END IF;
+      END $mig$;
+      CREATE UNIQUE INDEX IF NOT EXISTS products_slug_uidx ON products (slug);
 
+      -- Reserved for v2 (invoices, payments). Amounts in TOMAN.
       CREATE TABLE IF NOT EXISTS invoices (
-        id          SERIAL PRIMARY KEY,
-        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
-        total_rial  BIGINT NOT NULL DEFAULT 0,
-        paid_rial   BIGINT NOT NULL DEFAULT 0,
-        notes       TEXT,
-        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        id           SERIAL PRIMARY KEY,
+        customer_id  INTEGER NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
+        total_toman  BIGINT NOT NULL DEFAULT 0,
+        paid_toman   BIGINT NOT NULL DEFAULT 0,
+        notes        TEXT,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      DO $mig$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='invoices' AND column_name='total_rial') THEN
+          ALTER TABLE invoices RENAME COLUMN total_rial TO total_toman;
+        END IF;
+        IF EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='invoices' AND column_name='paid_rial') THEN
+          ALTER TABLE invoices RENAME COLUMN paid_rial TO paid_toman;
+        END IF;
+      END $mig$;
 
       CREATE TABLE IF NOT EXISTS invoice_items (
-        id          SERIAL PRIMARY KEY,
-        invoice_id  INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
-        product_id  INTEGER REFERENCES products(id) ON DELETE SET NULL,
-        description TEXT NOT NULL,
-        quantity    NUMERIC(14,3) NOT NULL DEFAULT 1,
-        unit_price_rial BIGINT NOT NULL DEFAULT 0
+        id                SERIAL PRIMARY KEY,
+        invoice_id        INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+        product_id        INTEGER REFERENCES products(id) ON DELETE SET NULL,
+        description       TEXT NOT NULL,
+        quantity          NUMERIC(14,3) NOT NULL DEFAULT 1,
+        unit_price_toman  BIGINT NOT NULL DEFAULT 0
       );
+      DO $mig$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='invoice_items' AND column_name='unit_price_rial') THEN
+          ALTER TABLE invoice_items RENAME COLUMN unit_price_rial TO unit_price_toman;
+        END IF;
+      END $mig$;
 
       CREATE TABLE IF NOT EXISTS payments (
-        id          SERIAL PRIMARY KEY,
-        customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
-        invoice_id  INTEGER REFERENCES invoices(id) ON DELETE SET NULL,
-        amount_rial BIGINT NOT NULL,
-        note        TEXT,
-        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        id            SERIAL PRIMARY KEY,
+        customer_id   INTEGER NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
+        invoice_id    INTEGER REFERENCES invoices(id) ON DELETE SET NULL,
+        amount_toman  BIGINT NOT NULL,
+        note          TEXT,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+      DO $mig$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name='payments' AND column_name='amount_rial') THEN
+          ALTER TABLE payments RENAME COLUMN amount_rial TO amount_toman;
+        END IF;
+      END $mig$;
     `);
+
+    // Seed catalog from the Golden Saffron Bazaar shop if empty.
+    const { SEED_PRODUCTS } = await import("./products-seed");
+    for (const p of SEED_PRODUCTS) {
+      await query(
+        `INSERT INTO products
+           (slug, name, category, weight, unit_price_toman, old_price_toman,
+            image_url, badge, short_description, stock)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0)
+         ON CONFLICT (slug) DO NOTHING`,
+        [
+          p.slug,
+          p.name,
+          p.category,
+          p.weight,
+          p.price_toman,
+          p.old_price_toman ?? null,
+          p.image_url ?? null,
+          p.badge ?? null,
+          p.short_description ?? null,
+        ],
+      );
+    }
   })().catch((e) => {
     initPromise = null; // allow retry on next call
     throw e;
