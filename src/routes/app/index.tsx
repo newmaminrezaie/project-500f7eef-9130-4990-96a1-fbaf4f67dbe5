@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { ShoppingCart, PackagePlus, Settings2 } from "lucide-react";
-import { dashboardSummary } from "@/lib/reports.functions";
+import { dashboardSummary, profitReport } from "@/lib/reports.functions";
 import { formatToman } from "@/lib/format";
 
 export const Route = createFileRoute("/app/")({
