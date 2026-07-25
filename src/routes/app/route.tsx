@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { createServerFn, useServerFn } from "@tanstack/react-start";
-import { Home, Users, Settings } from "lucide-react";
+import { Home, Users, Package, Settings } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth.server";
 import { logout } from "@/lib/auth.functions";
 
@@ -37,6 +37,12 @@ function AppLayout() {
       label: "مشتریان",
       icon: Users,
       match: (p: string) => p.startsWith("/app/customers"),
+    },
+    {
+      to: "/app/inventory",
+      label: "انبار",
+      icon: Package,
+      match: (p: string) => p.startsWith("/app/inventory"),
     },
     {
       to: "/app/settings",

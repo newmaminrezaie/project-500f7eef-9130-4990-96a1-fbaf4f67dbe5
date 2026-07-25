@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, Package } from "lucide-react";
 import { customerStats } from "@/lib/customers.functions";
+import { productStats } from "@/lib/products.functions";
 import { toFa } from "@/lib/format";
 
 export const Route = createFileRoute("/app/")({
@@ -11,19 +12,42 @@ export const Route = createFileRoute("/app/")({
 });
 
 function StatsCard() {
-  const { data } = useSuspenseQuery({
+  const { data: c } = useSuspenseQuery({
     queryKey: ["customerStats"],
     queryFn: () => customerStats(),
   });
+  const { data: p } = useSuspenseQuery({
+    queryKey: ["productStats"],
+    queryFn: () => productStats(),
+  });
   return (
-    <div className="rounded-3xl bg-primary p-6 text-primary-foreground shadow-soft">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-sm opacity-90">تعداد مشتریان</div>
-          <div className="mt-1 text-4xl font-black num">{toFa(data.total)}</div>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div className="rounded-3xl bg-primary p-6 text-primary-foreground shadow-soft">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm opacity-90">تعداد مشتریان</div>
+            <div className="mt-1 text-4xl font-black num">{toFa(c.total)}</div>
+          </div>
+          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary-foreground/15">
+            <Users className="h-8 w-8" />
+          </div>
         </div>
-        <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary-foreground/15">
-          <Users className="h-8 w-8" />
+      </div>
+      <div className="rounded-3xl bg-card p-6 text-foreground shadow-card">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm text-muted-foreground">محصولات موجود</div>
+            <div className="mt-1 text-4xl font-black num text-primary">
+              {toFa(p.inStock)}
+              <span className="text-lg text-muted-foreground">
+                {" / "}
+                {toFa(p.total)}
+              </span>
+            </div>
+          </div>
+          <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <Package className="h-8 w-8" />
+          </div>
         </div>
       </div>
     </div>
@@ -75,6 +99,21 @@ function Dashboard() {
             <div className="text-base font-bold text-foreground">لیست مشتریان</div>
             <div className="text-sm text-muted-foreground">
               جست‌وجو و ویرایش مشتریان
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          to="/app/inventory"
+          className="flex items-center gap-4 rounded-3xl bg-card p-5 shadow-card transition-colors hover:bg-accent"
+        >
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <Package className="h-7 w-7" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-base font-bold text-foreground">انبار / موجودی</div>
+            <div className="text-sm text-muted-foreground">
+              مدیریت موجودی و قیمت محصولات (به تومان)
             </div>
           </div>
         </Link>
