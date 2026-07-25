@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
-import { Wallet, TrendingUp, TrendingDown, Users } from "lucide-react";
-import { dashboardSummary, customerBalances } from "@/lib/reports.functions";
-import { formatToman, toFa } from "@/lib/format";
+import { Wallet, TrendingUp, TrendingDown, Users, LineChart } from "lucide-react";
+import { dashboardSummary, customerBalances, profitReport } from "@/lib/reports.functions";
+import { formatToman, toFa, formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/app/accounts")({
   head: () => ({ meta: [{ title: "حساب‌ها — حسابداری زعفران رضایی" }] }),
