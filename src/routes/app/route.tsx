@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { createServerFn, useServerFn } from "@tanstack/react-start";
-import { Home, Users, Package, Settings } from "lucide-react";
+import { LayoutGrid, Users, Package, Wallet } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth.server";
 import { logout } from "@/lib/auth.functions";
 
@@ -31,46 +31,44 @@ function AppLayout() {
 
   const path = location.pathname;
   const tabs = [
-    { to: "/app", label: "خانه", icon: Home, match: (p: string) => p === "/app" },
+    { to: "/app", label: "داشبورد", icon: LayoutGrid, match: (p: string) => p === "/app" },
     {
       to: "/app/customers",
-      label: "مشتریان",
+      label: "اشخاص",
       icon: Users,
       match: (p: string) => p.startsWith("/app/customers"),
     },
     {
       to: "/app/inventory",
-      label: "انبار",
+      label: "کالا و انبار",
       icon: Package,
       match: (p: string) => p.startsWith("/app/inventory"),
     },
     {
-      to: "/app/settings",
-      label: "تنظیمات",
-      icon: Settings,
-      match: (p: string) => p.startsWith("/app/settings"),
+      to: "/app/accounts",
+      label: "حساب‌ها",
+      icon: Wallet,
+      match: (p: string) => p.startsWith("/app/accounts"),
     },
   ] as const;
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background">
-      <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <header className="sticky top-0 z-30 border-b border-border bg-gradient-to-l from-primary to-[oklch(0.55_0.15_270)] text-primary-foreground">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary text-xl">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary-foreground/15 text-xl">
             🌾
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-base font-bold text-foreground">زعفران رضایی</div>
-            <div className="truncate text-xs text-muted-foreground">
-              خوش آمدید، {user?.name ?? "کاربر"}
-            </div>
+          <div className="min-w-0 flex-1 text-right">
+            <div className="truncate text-base font-black">حسابداری زعفران رضایی</div>
+            <div className="truncate text-xs opacity-90">خوش آمدید، {user?.name ?? "کاربر"}</div>
           </div>
           <button
             onClick={async () => {
               await doLogout({});
               await navigate({ to: "/login" });
             }}
-            className="rounded-xl border border-input bg-background px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+            className="rounded-xl bg-primary-foreground/15 px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-foreground/25"
           >
             خروج
           </button>
@@ -81,7 +79,7 @@ function AppLayout() {
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-gradient-to-l from-primary to-[oklch(0.55_0.15_270)] text-primary-foreground pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto flex max-w-2xl">
           {tabs.map((t) => {
             const active = t.match(path);
@@ -90,8 +88,8 @@ function AppLayout() {
               <Link
                 key={t.to}
                 to={t.to}
-                className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-semibold transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-semibold transition-opacity ${
+                  active ? "opacity-100" : "opacity-70 hover:opacity-100"
                 }`}
               >
                 <Icon
@@ -107,4 +105,3 @@ function AppLayout() {
     </div>
   );
 }
-// touch
