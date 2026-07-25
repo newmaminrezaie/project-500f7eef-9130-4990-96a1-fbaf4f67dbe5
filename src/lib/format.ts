@@ -13,12 +13,17 @@ export function toEn(input: string): string {
     .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
 }
 
-/** Format IRR amounts with Persian digits and thousand separators. */
-export function formatRial(amount: number | string | null | undefined): string {
+/** Format Toman amounts with Persian digits and thousand separators (no unit). */
+export function formatToman(amount: number | string | null | undefined): string {
   if (amount === null || amount === undefined || amount === "") return "۰";
   const n = typeof amount === "string" ? Number(toEn(amount)) : amount;
   if (!Number.isFinite(n)) return "۰";
   return toFa(Math.round(n).toLocaleString("en-US"));
+}
+
+/** Format Toman amounts with the "تومان" suffix. */
+export function formatTomanWithUnit(amount: number | string | null | undefined): string {
+  return `${formatToman(amount)} تومان`;
 }
 
 /** Format an ISO date as Persian date (Jalali via Intl). */
