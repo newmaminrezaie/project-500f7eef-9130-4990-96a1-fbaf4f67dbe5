@@ -1,9 +1,64 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Suspense } from "react";
-import { Wallet, TrendingUp, TrendingDown, Users, LineChart } from "lucide-react";
+import { Suspense, useState } from "react";
+import { Wallet, TrendingUp, TrendingDown, Users, LineChart, Copy, Check, MessageCircle } from "lucide-react";
 import { dashboardSummary, customerBalances, profitReport } from "@/lib/reports.functions";
 import { formatToman, toFa, formatDate } from "@/lib/format";
+
+function buildReminderSms(name: string, amount: number): string {
+  return (
+    `سلام ${name.trim()} عزیز،\n` +
+    `از خرید شما از زعفران رضایی سپاسگزاریم.\n` +
+    `مانده حساب شما نزد ما ${formatToman(amount)} تومان می‌باشد.\n` +
+    `در صورت امکان، لطفاً نسبت به تسویه اقدام فرمایید.\n` +
+    `با احترام — زعفران رضایی`
+  );
+}
+
+function CopySmsButton({ name, amount, phone }: { name: string; amount: number; phone?: string | null }) {
+  const [copied, setCopied] = useState(false);
+  const text = buildReminderSms(name, amount);
+  async function onCopy(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+  return (
+    <div className="flex gap-2">
+      <button
+        type="button"
+        onClick={onCopy}
+        className="flex items-center gap-1 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-bold text-primary active:bg-primary/20"
+        aria-label="کپی پیامک یادآوری"
+      >
+        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        {copied ? "کپی شد" : "کپی پیامک"}
+      </button>
+      {phone && (
+        <a
+          href={`sms:${phone}?body=${encodeURIComponent(text)}`}
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-700 active:bg-emerald-500/20"
+          aria-label="ارسال پیامک"
+        >
+          <MessageCircle className="h-4 w-4" />
+          ارسال
+        </a>
+      )}
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/app/accounts")({
   head: () => ({ meta: [{ title: "حساب‌ها — حسابداری زعفران رضایی" }] }),
@@ -82,11 +137,11 @@ function BalancesList({
       {rows.slice(0, 30).map((c) => {
         const amount = Math.abs(Number(c.balance));
         return (
-          <li key={c.id}>
+          <li key={c.id} className="rounded-2xl bg-card p-3 shadow-card">
             <Link
               to="/app/customers/$id"
               params={{ id: String(c.id) }}
-              className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card active:bg-accent"
+              className="flex items-center gap-3 active:opacity-80"
             >
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 font-bold text-primary">
                 {c.name.trim().charAt(0)}
@@ -104,9 +159,15 @@ function BalancesList({
                 <div className="text-[11px] text-muted-foreground">تومان</div>
               </div>
             </Link>
+            {filter === "debtors" && (
+              <div className="mt-3 flex justify-end border-t border-border pt-3">
+                <CopySmsButton name={c.name} amount={amount} phone={c.phone} />
+              </div>
+            )}
           </li>
         );
       })}
+
     </ul>
   );
 }
