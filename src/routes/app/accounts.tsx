@@ -137,11 +137,11 @@ function BalancesList({
       {rows.slice(0, 30).map((c) => {
         const amount = Math.abs(Number(c.balance));
         return (
-          <li key={c.id}>
+          <li key={c.id} className="rounded-2xl bg-card p-3 shadow-card">
             <Link
               to="/app/customers/$id"
               params={{ id: String(c.id) }}
-              className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-card active:bg-accent"
+              className="flex items-center gap-3 active:opacity-80"
             >
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 font-bold text-primary">
                 {c.name.trim().charAt(0)}
@@ -159,9 +159,15 @@ function BalancesList({
                 <div className="text-[11px] text-muted-foreground">تومان</div>
               </div>
             </Link>
+            {filter === "debtors" && (
+              <div className="mt-3 flex justify-end border-t border-border pt-3">
+                <CopySmsButton name={c.name} amount={amount} phone={c.phone} />
+              </div>
+            )}
           </li>
         );
       })}
+
     </ul>
   );
 }
