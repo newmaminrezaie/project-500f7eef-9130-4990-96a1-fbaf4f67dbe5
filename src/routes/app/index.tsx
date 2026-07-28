@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { ShoppingCart, PackagePlus, Settings2 } from "lucide-react";
 import { dashboardSummary, profitReport } from "@/lib/reports.functions";
 import { formatToman } from "@/lib/format";
+import { VoiceEntry } from "@/components/VoiceEntry";
 
 export const Route = createFileRoute("/app/")({
   head: () => ({ meta: [{ title: "حسابداری زعفران رضایی" }] }),
@@ -65,6 +66,8 @@ function Dashboard() {
       <Suspense fallback={<div className="h-32 animate-pulse rounded-3xl bg-secondary" />}>
         <TodayStrip />
       </Suspense>
+
+      <VoiceEntry />
 
       <div className="grid gap-4">
         <Link
