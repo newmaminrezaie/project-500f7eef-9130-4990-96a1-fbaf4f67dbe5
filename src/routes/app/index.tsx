@@ -67,6 +67,8 @@ function Dashboard() {
         <TodayStrip />
       </Suspense>
 
+      <VoiceEntry />
+
       <div className="grid gap-4">
         <Link
           to="/app/docs/$kind/new"
